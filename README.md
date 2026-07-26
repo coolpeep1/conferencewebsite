@@ -1,36 +1,114 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Conference Website
+
+A Next.js conference registration app with a public registration form, Supabase-backed storage, and an admin dashboard for managing registration statuses.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create your local environment file:
+
+```bash
+cp .env.example .env.local
+```
+
+Fill in:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Supabase Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Create a Supabase project.
+2. Go to Settings > API and copy:
+   - Project URL -> `NEXT_PUBLIC_SUPABASE_URL`
+   - anon public key -> `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Run `supabase/schema.sql` in the Supabase SQL editor.
+4. Create an admin user in Authentication > Users.
+5. Add that user to `admin_users`:
 
-## Learn More
+```sql
+insert into admin_users (id, email, full_name)
+values ('<user UUID>', '<email>', '<name>');
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run dev
+npm run build
+npm run start
+npm run lint
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Server Deployment
 
-## Deploy on Vercel
+These notes are for deploying to a VPS with Node, PM2, nginx, and Let's Encrypt.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 1. Set Environment Variables
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cd conference-app
+cp .env.example .env.local
+nano .env.local
+```
+
+Fill in your real Supabase URL and anon key.
+
+### 2. Install, Build, And Start
+
+```bash
+npm install
+npm run build
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+Follow the command printed by `pm2 startup` so the app restarts after server reboot.
+
+### 3. Configure Nginx
+
+Point your domain's A record to the server IP, then on the server:
+
+```bash
+sudo apt-get install -y nginx
+sudo cp deploy/nginx.conf.template /etc/nginx/sites-available/conference-app
+sudo nano /etc/nginx/sites-available/conference-app
+sudo ln -s /etc/nginx/sites-available/conference-app /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Replace `YOUR_DOMAIN` in the nginx config before reloading.
+
+### 4. Add HTTPS
+
+```bash
+sudo apt-get install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d YOUR_DOMAIN
+```
+
+### 5. Updating Later
+
+```bash
+cd conference-app
+git pull
+npm install
+npm run build
+pm2 restart conference-app
+```
