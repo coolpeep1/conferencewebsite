@@ -32,6 +32,8 @@ body {
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   outline: none;
+  background: #ffffff;
+  color: #000000;
 }
 
 .input:focus {

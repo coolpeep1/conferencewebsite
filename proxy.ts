@@ -1,52 +1,49 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSessionUserFromRequest } from "@/lib/session";
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const user = await getSessionUserFromRequest(request);
+  const pathname = request.nextUrl.pathname;
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isAttendeeRoute = pathname.startsWith("/attendee");
+  const isProtectedRoute = isAdminRoute || isAttendeeRoute;
+  const isLoginRoute = pathname === "/login" || pathname === "/admin/login";
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
-      },
+  if (isProtectedRoute && !isLoginRoute && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    if (isAdminRoute) {
+      url.searchParams.set("role", "admin");
     }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
-  const isLoginRoute = request.nextUrl.pathname === "/admin/login";
-
-  if (isAdminRoute && !isLoginRoute && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/admin/login";
     return NextResponse.redirect(url);
   }
 
-  if (isLoginRoute && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/admin/dashboard";
-    return NextResponse.redirect(url);
+  if (user) {
+    const isAdmin = user.role === "admin";
+
+    if (isLoginRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = isAdmin ? "/admin/dashboard" : "/attendee/forms";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    if (isAdminRoute && !isLoginRoute && !isAdmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/attendee/forms";
+      return NextResponse.redirect(url);
+    }
+
+    if (isAttendeeRoute && isAdmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin/dashboard";
+      return NextResponse.redirect(url);
+    }
   }
 
-  return response;
+  return NextResponse.next({ request });
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/attendee/:path*", "/login"],
 };

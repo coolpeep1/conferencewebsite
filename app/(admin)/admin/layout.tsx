@@ -1,0 +1,22 @@
+import SidebarShell from "@/app/_components/sidebar-shell";
+import { getDisplayName, getRequiredAdmin } from "@/lib/auth";
+
+const adminNav = [{ href: "/admin/dashboard", label: "Registration Center" }];
+
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user } = await getRequiredAdmin();
+
+  return (
+    <SidebarShell
+      greetingName={getDisplayName(user)}
+      navItems={adminNav}
+      roleLabel="Admin Portal"
+    >
+      {children}
+    </SidebarShell>
+  );
+}
