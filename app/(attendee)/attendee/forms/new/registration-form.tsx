@@ -21,7 +21,7 @@ const initialState: FormState = {
   dietary_notes: "",
 };
 
-export default function RegistrationForm() {
+export default function RegistrationForm({ returnPath = "/attendee/forms" }: { returnPath?: string }) {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(initialState);
   const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
@@ -45,7 +45,7 @@ export default function RegistrationForm() {
       return;
     }
 
-    router.push("/attendee/forms");
+    router.push(returnPath);
     router.refresh();
   }
 

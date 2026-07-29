@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { DharmaLogo } from "@/app/_components/dharma-logo";
@@ -15,10 +15,22 @@ function LoginForm() {
   const [role, setRole] = useState<Role>(initialRole);
   const [mode, setMode] = useState<Mode>("sign-in");
   const [fullName, setFullName] = useState("");
+  const [organizationName, setOrganizationName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const credentialsRef = useRef({ fullName: "", email: "", password: "" });
+
+  function switchRole(nextRole: Role) {
+    const draft = credentialsRef.current;
+    setRole(nextRole);
+    setMode("sign-in");
+    setFullName(draft.fullName);
+    setEmail(draft.email);
+    setPassword(draft.password);
+    setMessage("");
+  }
 
   const title = useMemo(() => {
     if (mode === "sign-up") {
@@ -36,7 +48,7 @@ function LoginForm() {
     const endpoint = mode === "sign-up" ? "/api/auth/signup" : "/api/auth/login";
     const body =
       mode === "sign-up"
-        ? { full_name: fullName.trim(), email, password }
+        ? { full_name: fullName.trim(), organization_name: organizationName.trim(), email, password }
         : { email, password, role };
 
     const response = await fetch(endpoint, {
@@ -78,10 +90,7 @@ function LoginForm() {
         <div className="mt-6 grid grid-cols-2 rounded-md bg-slate-100 p-1">
           <button
             type="button"
-            onClick={() => {
-              setRole("attendee");
-              setMode("sign-in");
-            }}
+            onClick={() => switchRole("attendee")}
             className={`rounded px-3 py-2 text-sm font-medium ${
               role === "attendee" && mode === "sign-in"
                 ? "bg-white text-slate-950 shadow-sm"
@@ -92,10 +101,7 @@ function LoginForm() {
           </button>
           <button
             type="button"
-            onClick={() => {
-              setRole("admin");
-              setMode("sign-in");
-            }}
+            onClick={() => switchRole("admin")}
             className={`rounded px-3 py-2 text-sm font-medium ${
               role === "admin" && mode === "sign-in"
                 ? "bg-white text-slate-950 shadow-sm"
@@ -108,15 +114,26 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           {mode === "sign-up" && (
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium text-slate-700">Full name</span>
-              <input
-                required
-                value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
-                className="input"
-              />
-            </label>
+            <>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Full name</span>
+                <input
+                  required
+                  value={fullName}
+                  onChange={(event) => { credentialsRef.current.fullName = event.target.value; setFullName(event.target.value); }}
+                  className="input"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700">Organization name</span>
+                <input
+                  required
+                  value={organizationName}
+                  onChange={(event) => setOrganizationName(event.target.value)}
+                  className="input"
+                />
+              </label>
+            </>
           )}
 
           <label className="block">
@@ -125,7 +142,7 @@ function LoginForm() {
               required
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => { credentialsRef.current.email = event.target.value; setEmail(event.target.value); }}
               className="input"
             />
           </label>
@@ -137,7 +154,7 @@ function LoginForm() {
               type="password"
               minLength={6}
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => { credentialsRef.current.password = event.target.value; setPassword(event.target.value); }}
               className="input"
             />
           </label>

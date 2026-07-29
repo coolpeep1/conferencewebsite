@@ -20,12 +20,6 @@ export default async function AttendeeFormsPage() {
             Open a form to see full details and any admin updates.
           </p>
         </div>
-        <Link
-          href="/attendee/forms/new"
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
-        >
-          Create New Form
-        </Link>
       </div>
 
       {error && (
@@ -76,15 +70,7 @@ export default async function AttendeeFormsPage() {
             </svg>
           </div>
           <h2 className="text-lg font-semibold text-slate-900">No forms submitted yet</h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Create your first registration form when you are ready.
-          </p>
-          <Link
-            href="/attendee/forms/new"
-            className="mt-4 inline-block rounded-md bg-slate-900 px-6 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
-          >
-            Create New Form
-          </Link>
+          <p className="mt-2 text-sm text-slate-600">Your submitted registration forms will appear here.</p>
         </div>
       )}
     </section>

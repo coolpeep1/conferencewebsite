@@ -6,12 +6,14 @@ import { createSessionToken, applySessionCookie, type SessionUser } from "@/lib/
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const fullName = typeof body?.full_name === "string" ? body.full_name.trim() : "";
+  const organizationName =
+    typeof body?.organization_name === "string" ? body.organization_name.trim() : "";
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body?.password === "string" ? body.password : "";
 
-  if (!fullName || !email || !password) {
+  if (!fullName || !organizationName || !email || !password) {
     return NextResponse.json(
-      { error: "Full name, email, and password are required." },
+      { error: "Full name, organization name, email, and password are required." },
       { status: 400 }
     );
   }
@@ -52,6 +54,19 @@ export async function POST(request: Request) {
 
     console.error("Signup error:", error.message);
     return NextResponse.json({ error: "Could not create account." }, { status: 500 });
+  }
+
+  const { error: organizationError } = await supabase.from("organizations").insert({
+    created_by: user.id,
+    org_name: organizationName,
+    contact_name: fullName,
+    contact_email: email,
+  });
+
+  if (organizationError) {
+    await supabase.from("app_users").delete().eq("id", user.id);
+    console.error("Organization signup error:", organizationError.message);
+    return NextResponse.json({ error: "Could not create the organization." }, { status: 500 });
   }
 
   const sessionUser: SessionUser = {

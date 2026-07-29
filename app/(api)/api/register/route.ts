@@ -5,8 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export async function POST(request: Request) {
   const user = await getSessionUser();
 
-  if (!user || user.role !== "attendee") {
-    return NextResponse.json({ error: "Please sign in before submitting a form." }, { status: 401 });
+  if (!user || user.role !== "admin") {
+    return NextResponse.json({ error: "Only administrators can create forms." }, { status: 403 });
   }
 
   const body = await request.json().catch(() => null);

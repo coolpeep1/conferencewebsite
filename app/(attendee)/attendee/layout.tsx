@@ -3,7 +3,7 @@ import { getDisplayName, getRequiredAttendee } from "@/lib/auth";
 
 const attendeeNav = [
   { href: "/attendee/forms", label: "Submitted Forms" },
-  { href: "/attendee/forms/new", label: "Create New Form" },
+  { href: "/attendee/assigned-forms", label: "Assigned Forms" },
 ];
 
 export default async function AttendeeLayout({

@@ -1,0 +1,3 @@
+import { getRequiredAdmin } from "@/lib/auth";
+import ProfileEditor from "./profile-editor";
+export default async function ProfilePage() { const { supabase, user } = await getRequiredAdmin(); const { data: profile } = await supabase.from("admin_profiles").select("organization_role, bio, contact_email").eq("user_id", user.id).maybeSingle(); return <section><h1 className="text-3xl font-semibold">My Profile</h1><p className="mt-2 text-sm text-slate-600">This information is shown to attendees assigned one of your forms.</p><ProfileEditor name={user.full_name} email={user.email} profile={profile} /></section>; }
