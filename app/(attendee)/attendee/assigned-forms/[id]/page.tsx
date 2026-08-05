@@ -12,7 +12,7 @@ export default async function AssignedFormPage({
   const { data: assignment } = await supabase
     .from("form_assignments")
     .select(
-      "id, custom_forms(id, title, description, fields, created_by)"
+      "id, custom_forms(id, title, description, fields, created_by), form_responses(submitted_at)"
     )
     .eq("id", id)
     .eq("recipient_user_id", user.id)
@@ -20,6 +20,12 @@ export default async function AssignedFormPage({
 
   if (!assignment) notFound();
   const form = assignment.custom_forms;
+  // PostgREST returns a one-to-one join (UNIQUE constraint) as an object,
+  // not an array. Handle both shapes.
+  const fr = assignment.form_responses;
+  const submittedAt = Array.isArray(fr)
+    ? fr[0]?.submitted_at ?? null
+    : fr?.submitted_at ?? null;
 
   const { data: author } = await supabase
     .from("app_users")
@@ -54,7 +60,11 @@ export default async function AssignedFormPage({
           {profile?.contact_email || author?.email}
         </p>
       </aside>
-      <ResponseForm assignmentId={assignment.id} fields={form.fields} />
+      <ResponseForm
+        assignmentId={assignment.id}
+        fields={form.fields}
+        submittedAt={submittedAt}
+      />
     </section>
   );
 }

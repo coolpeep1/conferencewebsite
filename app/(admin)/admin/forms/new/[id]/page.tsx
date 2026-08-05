@@ -48,7 +48,10 @@ export default async function AdminFormResponsesPage({
     .order("assigned_at", { ascending: false });
 
   const submittedCount =
-    assignments?.filter((a: any) => a.form_responses?.length).length ?? 0;
+    assignments?.filter((a: any) => {
+      const fr = a.form_responses;
+      return Array.isArray(fr) ? fr.length > 0 : !!fr;
+    }).length ?? 0;
 
   return (
     <section className="max-w-4xl">
@@ -65,7 +68,8 @@ export default async function AdminFormResponsesPage({
 
       <div className="mt-8 space-y-4">
         {assignments?.map((assignment: any) => {
-          const response = assignment.form_responses?.[0];
+          const fr = assignment.form_responses;
+          const response = Array.isArray(fr) ? fr[0] : fr;
           const recipient = assignment.app_users;
 
           return (

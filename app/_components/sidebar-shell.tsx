@@ -41,7 +41,7 @@ export default function SidebarShell({
         <div className="flex items-center justify-between">
           <div className={sidebarOpen ? "block" : "hidden"}>
             <p className="text-xs font-semibold uppercase tracking-wide text-brand-white/60">
-              Sangam&apos;s Conference
+              DFF&apos;s Sangam
             </p>
             <h1 className="mt-1 font-display text-lg font-bold text-brand-white">
               {roleLabel}
@@ -115,7 +115,7 @@ export default function SidebarShell({
             </div>
 
             <div className="flex items-center gap-2">
-              <DharmaLogo size="sm" />
+                        <DharmaLogo size="sm" />
               <div className="flex gap-2 overflow-x-auto md:hidden">
                 {navItems.map((item) => (
                   <Link
@@ -123,8 +123,8 @@ export default function SidebarShell({
                     href={item.href}
                     className={`whitespace-nowrap rounded-md border-l-2 px-3 py-2 text-sm font-medium ${
                       pathname === item.href
-                        ? "border-brand-saffron bg-brand-blue/60 text-brand-white"
-                        : "border-transparent text-brand-white/80"
+                        ? "border-brand-saffron bg-brand-cement text-brand-blue"
+                        : "border-transparent text-brand-blue hover:bg-brand-cement"
                     }`}
                   >
                     {item.label}
@@ -132,7 +132,7 @@ export default function SidebarShell({
                 ))}
                 <button
                   onClick={handleLogout}
-                  className="whitespace-nowrap rounded-md border border-brand-saffron bg-brand-saffron px-3 py-2 text-sm font-semibold text-brand-white"
+                  className="whitespace-nowrap btn-secondary"
                 >
                   Sign out
                 </button>

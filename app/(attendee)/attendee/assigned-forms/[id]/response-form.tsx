@@ -12,9 +12,11 @@ type Field = {
 export default function ResponseForm({
   assignmentId,
   fields,
+  submittedAt,
 }: {
   assignmentId: string;
   fields: Field[];
+  submittedAt: string | null;
 }) {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -22,17 +24,32 @@ export default function ResponseForm({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    setError("");
     const r = await fetch("/api/forms/respond", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ assignmentId, answers }),
     });
     if (!r.ok) {
-      setError((await r.json()).error || "Could not submit.");
+      const data = await r.json().catch(() => ({}));
+      setError(data.error || "Could not submit form.");
       return;
     }
     router.push("/attendee/assigned-forms");
     router.refresh();
+  }
+
+  if (submittedAt) {
+    return (
+      <div className="mt-6 rounded-lg border border-brand-cement bg-brand-cement p-5">
+        <p className="font-display text-lg font-bold text-brand-blue">
+          You submitted this form on {new Date(submittedAt).toLocaleString()}.
+        </p>
+        <p className="mt-1 text-sm text-brand-blue/70">
+          Your response has been recorded. Contact the administrator if you need to update it.
+        </p>
+      </div>
+    );
   }
 
   return (

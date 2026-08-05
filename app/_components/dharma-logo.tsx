@@ -1,16 +1,30 @@
 import Image from "next/image";
 
-export function DharmaLogo({ size = "md", variant = "vertical" }: { size?: "sm" | "md" | "lg"; variant?: "vertical" | "horizontal" }) {
-  const imageSrc = variant === "horizontal" ? "/dffimagehorizontal.jpg" : "/dffimage.jpg";
-  
+type LogoSize = "sm" | "md" | "lg";
+
+export function DharmaLogo({
+  size = "md",
+  variant = "vertical",
+  transparent = false,
+}: {
+  size?: LogoSize;
+  variant?: "vertical" | "horizontal";
+  transparent?: boolean;
+}) {
+  const imageSrc = transparent
+    ? "/image__6_-removebg-preview.png"
+    : variant === "horizontal"
+    ? "/dffimagehorizontal.jpg"
+    : "/dffimage.jpg";
+
   const sizes = {
-    sm: { width: 60, height: 60 },
+    sm: { width: 40, height: 40 },
     md: { width: 100, height: 100 },
     lg: { width: 200, height: 200 },
   };
 
   const sizeClasses = {
-    sm: "w-15 h-15",
+    sm: "w-10 h-10",
     md: "w-24 h-24",
     lg: "w-52 h-52",
   };

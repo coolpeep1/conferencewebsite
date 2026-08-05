@@ -41,7 +41,10 @@ export default async function AdminTableViewPage({
         .order("assigned_at", { ascending: false });
 
       rows = (assignments ?? []).map((a: any) => {
-        const r = Array.isArray(a.form_responses) ? a.form_responses[0] : null;
+        // PostgREST returns a one-to-one join (UNIQUE constraint) as an object,
+        // not an array. Handle both shapes so existing responses render in the grid.
+        const fr = a.form_responses;
+        const r = Array.isArray(fr) ? fr[0] : fr ?? null;
         return {
           assignmentId: a.id,
           recipientName: a.app_users?.full_name ?? "Unknown",

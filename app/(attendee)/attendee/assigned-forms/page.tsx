@@ -24,7 +24,8 @@ export default async function AssignedFormsPage() {
       </div>
       <div className="mt-8 grid gap-4">
         {assignments?.map((assignment: any) => {
-          const submitted = !!assignment.form_responses?.length;
+          const fr = assignment.form_responses;
+          const submitted = Array.isArray(fr) ? fr.length > 0 : !!fr;
           return (
             <Link
               key={assignment.id}
