@@ -7,23 +7,26 @@ export default async function AttendeeFormsPage() {
   const { supabase, user } = await getRequiredAttendee();
   const { data: forms, error } = await supabase
     .from("organizations")
-    .select("id, org_name, status, num_attendees, created_at, updated_at, notes")
+    .select(
+      "id, org_name, status, num_attendees, created_at, updated_at, notes"
+    )
     .eq("created_by", user.id)
     .order("created_at", { ascending: false });
 
   return (
     <section>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold text-slate-900">Submitted Forms</h1>
-          <p className="mt-2 text-sm text-slate-600">
+        <div className="page-header">
+          <span className="accent" />
+          <h1>Submitted Forms</h1>
+          <p className="mt-2 text-sm text-brand-blue/70">
             Open a form to see full details and any admin updates.
           </p>
         </div>
       </div>
 
       {error && (
-        <p className="mt-6 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <p className="mt-6 rounded-md border border-brand-saffron bg-brand-cement p-3 text-sm text-brand-blue">
           Could not load forms: {error.message}
         </p>
       )}
@@ -33,65 +36,38 @@ export default async function AttendeeFormsPage() {
           <Link
             key={form.id}
             href={`/attendee/forms/${form.id}`}
-            className="block rounded-lg border-2 border-slate-900 bg-white p-5 shadow-sm transition hover:border-slate-700 hover:shadow-md"
+            className="block rounded-lg border border-brand-cement bg-brand-white p-5 transition hover:border-brand-saffron hover:bg-brand-cement"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">{form.org_name}</h2>
-                <p className="mt-1 text-sm text-slate-600">
+                <h2 className="font-display text-lg font-bold text-brand-blue">
+                  {form.org_name}
+                </h2>
+                <p className="mt-1 text-sm text-brand-blue/70">
                   Submitted {new Date(form.created_at).toLocaleDateString()} ·{" "}
-                  {form.num_attendees} attendee{form.num_attendees === 1 ? "" : "s"}
+                  {form.num_attendees} attendee
+                  {form.num_attendees === 1 ? "" : "s"}
                 </p>
-                <p className="mt-2 text-sm text-slate-700">
+                <p className="mt-2 text-sm text-brand-blue">
                   {form.notes ? `Update: ${form.notes}` : "No admin update yet"}
                 </p>
               </div>
-              <StatusBadge status={form.status} />
+              <span className={`chip chip-${form.status}`}>{form.status}</span>
             </div>
           </Link>
         ))}
       </div>
 
       {forms?.length === 0 && (
-        <div className="mt-8 rounded-lg border-2 border-dashed border-slate-300 bg-white p-8 text-center">
-          <div className="flex justify-center mb-4">
-            <svg
-              className="w-16 h-16 text-slate-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
-              />
-            </svg>
-          </div>
-          <h2 className="text-lg font-semibold text-slate-900">No forms submitted yet</h2>
-          <p className="mt-2 text-sm text-slate-600">Your submitted registration forms will appear here.</p>
+        <div className="mt-8 rounded-lg border-2 border-dashed border-brand-saffron bg-brand-cement p-8 text-center">
+          <h2 className="font-display text-lg font-bold text-brand-blue">
+            No forms submitted yet
+          </h2>
+          <p className="mt-2 text-sm text-brand-blue/70">
+            Your submitted registration forms will appear here.
+          </p>
         </div>
       )}
     </section>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const classes: Record<string, string> = {
-    pending: "bg-yellow-50 text-yellow-900 ring-yellow-300",
-    confirmed: "bg-emerald-50 text-emerald-900 ring-emerald-300",
-    waitlisted: "bg-blue-50 text-blue-900 ring-blue-300",
-    declined: "bg-red-50 text-red-900 ring-red-300",
-  };
-
-  return (
-    <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ring-1 ${
-        classes[status] ?? classes.pending
-      }`}
-    >
-      {status}
-    </span>
   );
 }

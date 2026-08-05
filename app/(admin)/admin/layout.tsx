@@ -5,6 +5,7 @@ const adminNav = [
   { href: "/admin/dashboard", label: "Registration Center" },
   { href: "/admin/forms", label: "My Forms" },
   { href: "/admin/forms/new", label: "Create Your Own Form" },
+  { href: "/admin/responses", label: "Table View" },
   { href: "/admin/profile", label: "My Profile" },
 ];
 

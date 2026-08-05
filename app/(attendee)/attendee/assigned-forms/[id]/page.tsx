@@ -1,4 +1,60 @@
 import { notFound } from "next/navigation";
 import { getRequiredAttendee } from "@/lib/auth";
 import ResponseForm from "./response-form";
-export default async function AssignedFormPage({ params }: { params: Promise<{ id: string }> }) { const { id } = await params; const { supabase, user } = await getRequiredAttendee(); const { data: assignment } = await supabase.from("form_assignments").select("id, custom_forms(id, title, description, fields, created_by)").eq("id", id).eq("recipient_user_id", user.id).maybeSingle() as any; if(!assignment) notFound(); const form=assignment.custom_forms; const { data: author }=await supabase.from("app_users").select("full_name, email").eq("id",form.created_by).single(); const { data: profile }=await supabase.from("admin_profiles").select("organization_role, bio, contact_email").eq("user_id",form.created_by).maybeSingle(); return <section className="max-w-2xl"><h1 className="text-3xl font-semibold">{form.title}</h1><p className="mt-2 text-slate-600">{form.description}</p><aside className="mt-5 rounded border bg-white p-4"><p className="font-medium">Sent by {author?.full_name ?? "Conference administrator"}</p><p className="text-sm text-slate-600">{profile?.organization_role || "Administrator"}</p>{profile?.bio&&<p className="mt-2 text-sm">{profile.bio}</p>}<p className="mt-2 text-sm">{profile?.contact_email || author?.email}</p></aside><ResponseForm assignmentId={assignment.id} fields={form.fields}/></section>; }
+
+export default async function AssignedFormPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const { supabase, user } = await getRequiredAttendee();
+  const { data: assignment } = await supabase
+    .from("form_assignments")
+    .select(
+      "id, custom_forms(id, title, description, fields, created_by)"
+    )
+    .eq("id", id)
+    .eq("recipient_user_id", user.id)
+    .maybeSingle() as any;
+
+  if (!assignment) notFound();
+  const form = assignment.custom_forms;
+
+  const { data: author } = await supabase
+    .from("app_users")
+    .select("full_name, email")
+    .eq("id", form.created_by)
+    .single();
+
+  const { data: profile } = await supabase
+    .from("admin_profiles")
+    .select("organization_role, bio, contact_email")
+    .eq("user_id", form.created_by)
+    .maybeSingle();
+
+  return (
+    <section className="max-w-2xl">
+      <div className="page-header">
+        <span className="accent" />
+        <h1>{form.title}</h1>
+        <p className="mt-2 text-sm text-brand-blue/70">{form.description}</p>
+      </div>
+      <aside className="mt-5 rounded border border-brand-cement bg-brand-cement p-4">
+        <p className="font-semibold text-brand-blue">
+          Sent by {author?.full_name ?? "Conference administrator"}
+        </p>
+        <p className="text-sm text-brand-blue/70">
+          {profile?.organization_role || "Administrator"}
+        </p>
+        {profile?.bio && (
+          <p className="mt-2 text-sm text-brand-blue">{profile.bio}</p>
+        )}
+        <p className="mt-2 text-sm text-brand-blue">
+          {profile?.contact_email || author?.email}
+        </p>
+      </aside>
+      <ResponseForm assignmentId={assignment.id} fields={form.fields} />
+    </section>
+  );
+}

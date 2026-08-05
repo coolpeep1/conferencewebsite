@@ -22,7 +22,7 @@ export default async function AttendeeFormDetailPage({
   if (error) {
     return (
       <section>
-        <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <p className="rounded-md border border-brand-saffron bg-brand-cement p-3 text-sm text-brand-blue">
           Could not load form: {error.message}
         </p>
       </section>
@@ -37,23 +37,24 @@ export default async function AttendeeFormDetailPage({
     <section className="max-w-3xl">
       <Link
         href="/attendee/forms"
-        className="text-sm font-medium text-slate-600 hover:text-slate-950"
+        className="text-sm font-medium text-brand-blue/70 hover:text-brand-blue"
       >
         ← Back to submitted forms
       </Link>
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{form.org_name}</h1>
-          <p className="mt-1 text-sm text-slate-600">
+        <div className="page-header">
+          <span className="accent" />
+          <h1>{form.org_name}</h1>
+          <p className="mt-2 text-sm text-brand-blue/70">
             Submitted {new Date(form.created_at).toLocaleString()}
           </p>
         </div>
-        <StatusBadge status={form.status} />
+        <span className={`chip chip-${form.status}`}>{form.status}</span>
       </div>
 
-      <div className="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+      <div className="mt-6 rounded-lg border border-brand-cement bg-brand-white p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-blue/70">
           Form details
         </h2>
         <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
@@ -62,12 +63,15 @@ export default async function AttendeeFormDetailPage({
           <Detail label="Phone" value={form.contact_phone || "Not provided"} />
           <Detail label="Attendees" value={String(form.num_attendees)} />
           <Detail label="Dietary Notes" value={form.dietary_notes || "None"} />
-          <Detail label="Last updated" value={new Date(form.updated_at).toLocaleString()} />
+          <Detail
+            label="Last updated"
+            value={new Date(form.updated_at).toLocaleString()}
+          />
         </dl>
       </div>
 
-      <div className="mt-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+      <div className="mt-4 rounded-lg border border-brand-cement bg-brand-white p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-brand-blue/70">
           Admin updates
         </h2>
         <dl className="mt-4 grid gap-4 text-sm">
@@ -82,29 +86,10 @@ export default async function AttendeeFormDetailPage({
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <dt className="text-xs font-semibold uppercase tracking-wide text-brand-blue/70">
         {label}
       </dt>
-      <dd className="mt-1 text-slate-800">{value}</dd>
+      <dd className="mt-1 text-brand-blue">{value}</dd>
     </div>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const classes: Record<string, string> = {
-    pending: "bg-amber-50 text-amber-800 ring-amber-200",
-    confirmed: "bg-emerald-50 text-emerald-800 ring-emerald-200",
-    waitlisted: "bg-blue-50 text-blue-800 ring-blue-200",
-    declined: "bg-red-50 text-red-800 ring-red-200",
-  };
-
-  return (
-    <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ring-1 ${
-        classes[status] ?? classes.pending
-      }`}
-    >
-      {status}
-    </span>
   );
 }

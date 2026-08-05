@@ -110,12 +110,12 @@ export default function RegistrationForm({ returnPath = "/attendee/forms" }: { r
         />
       </Field>
 
-      {status === "error" && <p className="text-sm text-red-600">{errorMsg}</p>}
+      {status === "error" && <p className="text-sm text-brand-saffron">{errorMsg}</p>}
 
       <button
         type="submit"
         disabled={status === "submitting"}
-        className="rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+        className="btn-primary"
       >
         {status === "submitting" ? "Submitting..." : "Submit Form"}
       </button>
@@ -126,7 +126,7 @@ export default function RegistrationForm({ returnPath = "/attendee/forms" }: { r
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-700">{label}</span>
+      <span className="mb-1 block text-sm font-medium text-brand-blue">{label}</span>
       {children}
     </label>
   );

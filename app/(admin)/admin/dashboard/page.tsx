@@ -20,9 +20,10 @@ export default async function AdminDashboardPage() {
 
   return (
     <section>
-      <div>
-        <h1 className="text-3xl font-semibold text-slate-900">Submitted Registration Forms Center</h1>
-        <p className="mt-2 text-sm text-slate-600">
+      <div className="page-header">
+        <span className="accent" />
+        <h1>Submitted Registration Forms Center</h1>
+        <p className="mt-2 text-sm text-brand-blue/70">
           Review attendee submissions and publish updates they can see.
         </p>
       </div>
@@ -34,7 +35,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {error && (
-        <p className="mt-6 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <p className="mt-6 rounded-md border border-brand-saffron bg-brand-cement p-3 text-sm text-brand-blue">
           Could not load registrations: {error.message}
         </p>
       )}
@@ -46,9 +47,9 @@ export default async function AdminDashboardPage() {
       </div>
 
       {registrations?.length === 0 && (
-        <div className="mt-8 rounded-lg border-2 border-dashed border-slate-300 bg-white p-8 text-center">
-          <h2 className="text-lg font-semibold text-slate-900">No submitted forms yet</h2>
-          <p className="mt-2 text-sm text-slate-600">
+        <div className="mt-8 rounded-lg border-2 border-dashed border-brand-saffron bg-brand-cement p-8 text-center">
+          <h2 className="font-display text-lg font-bold text-brand-blue">No submitted forms yet</h2>
+          <p className="mt-2 text-sm text-brand-blue/70">
             Attendee registrations will appear here after they submit forms.
           </p>
         </div>
@@ -59,9 +60,9 @@ export default async function AdminDashboardPage() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border-2 border-slate-900 bg-white p-4 shadow-sm">
-      <p className="text-sm text-slate-600">{label}</p>
-      <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
+    <div className="rounded-lg border border-brand-cement bg-brand-cement p-4">
+      <p className="text-sm text-brand-blue/70">{label}</p>
+      <p className="mt-2 font-display text-3xl font-bold text-brand-blue">{value}</p>
     </div>
   );
 }

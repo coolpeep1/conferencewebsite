@@ -41,7 +41,9 @@ export default async function AdminFormResponsesPage({
 
   const { data: assignments } = await supabase
     .from("form_assignments")
-    .select("id, assigned_at, recipient_user_id, app_users(full_name, email), form_responses(answers, submitted_at)")
+    .select(
+      "id, assigned_at, recipient_user_id, app_users(full_name, email), form_responses(answers, submitted_at)"
+    )
     .eq("form_id", id)
     .order("assigned_at", { ascending: false });
 
@@ -50,9 +52,14 @@ export default async function AdminFormResponsesPage({
 
   return (
     <section className="max-w-4xl">
-      <h1 className="text-3xl font-semibold">{form.title}</h1>
-      {form.description && <p className="mt-2 text-sm text-slate-600">{form.description}</p>}
-      <p className="mt-3 text-sm text-slate-600">
+      <div className="page-header">
+        <span className="accent" />
+        <h1>{form.title}</h1>
+        {form.description && (
+          <p className="mt-2 text-sm text-brand-blue/70">{form.description}</p>
+        )}
+      </div>
+      <p className="mt-3 text-sm text-brand-blue/70">
         {submittedCount} of {assignments?.length ?? 0} recipients have responded
       </p>
 
@@ -64,20 +71,18 @@ export default async function AdminFormResponsesPage({
           return (
             <article
               key={assignment.id}
-              className="rounded-lg border-2 border-slate-900 bg-white p-5 shadow-sm"
+              className="rounded-lg border border-brand-cement bg-brand-white p-5"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="font-semibold text-slate-900">
+                  <h2 className="font-display text-lg font-bold text-brand-blue">
                     {recipient?.full_name ?? "Unknown recipient"}
                   </h2>
-                  <p className="text-sm text-slate-600">{recipient?.email}</p>
+                  <p className="text-sm text-brand-blue/70">{recipient?.email}</p>
                 </div>
                 <span
-                  className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
-                    response
-                      ? "bg-emerald-50 text-emerald-900 ring-emerald-300"
-                      : "bg-yellow-50 text-yellow-900 ring-yellow-300"
+                  className={`chip ${
+                    response ? "chip-submitted" : "chip-pending"
                   }`}
                 >
                   {response ? "Submitted" : "Pending"}
@@ -85,19 +90,19 @@ export default async function AdminFormResponsesPage({
               </div>
 
               {response && (
-                <dl className="mt-4 grid gap-3 border-t border-slate-200 pt-4 sm:grid-cols-2">
+                <dl className="mt-4 grid gap-3 border-t border-brand-cement pt-4 sm:grid-cols-2">
                   {fields.map((field, i) => (
                     <div key={i}>
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-slate-900">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-brand-blue">
                         {field.label}
                       </dt>
-                      <dd className="mt-1 break-words text-slate-900">
+                      <dd className="mt-1 break-words text-brand-blue">
                         {formatAnswer(response.answers?.[field.label])}
                       </dd>
                     </div>
                   ))}
                   <div className="sm:col-span-2">
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-brand-blue/60">
                       Submitted {new Date(response.submitted_at).toLocaleString()}
                     </p>
                   </div>
@@ -108,7 +113,9 @@ export default async function AdminFormResponsesPage({
         })}
 
         {!assignments?.length && (
-          <p className="text-sm text-slate-600">This form hasn&apos;t been sent to anyone yet.</p>
+          <p className="mt-8 text-sm text-brand-blue/70">
+            This form hasn&apos;t been sent to anyone yet.
+          </p>
         )}
       </div>
     </section>

@@ -1,5 +1,68 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-type Field={label:string;type:"text"|"textarea"|"email"|"number";required:boolean};
-export default function ResponseForm({ assignmentId, fields }: { assignmentId:string; fields:Field[] }) { const router=useRouter(); const [answers,setAnswers]=useState<Record<string,string>>({}); const [error,setError]=useState(""); async function submit(e:React.FormEvent){e.preventDefault();const r=await fetch("/api/forms/respond",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({assignmentId,answers})});if(!r.ok){setError((await r.json()).error||"Could not submit.");return;}router.push("/attendee/assigned-forms");router.refresh();} return <form onSubmit={submit} className="mt-6 space-y-5">{fields.map((field,i)=><label key={i} className="block text-sm font-medium">{field.label}{field.type==="textarea"?<textarea required={field.required} className="input mt-1" rows={4} onChange={e=>setAnswers({...answers,[field.label]:e.target.value})}/>:<input required={field.required} type={field.type} className="input mt-1" onChange={e=>setAnswers({...answers,[field.label]:e.target.value})}/>}</label>)}{error&&<p className="text-sm text-red-600">{error}</p>}<button className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white">Submit form</button></form>; }
+
+type Field = {
+  label: string;
+  type: "text" | "textarea" | "email" | "number";
+  required: boolean;
+};
+
+export default function ResponseForm({
+  assignmentId,
+  fields,
+}: {
+  assignmentId: string;
+  fields: Field[];
+}) {
+  const router = useRouter();
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [error, setError] = useState("");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const r = await fetch("/api/forms/respond", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignmentId, answers }),
+    });
+    if (!r.ok) {
+      setError((await r.json()).error || "Could not submit.");
+      return;
+    }
+    router.push("/attendee/assigned-forms");
+    router.refresh();
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-6 space-y-5">
+      {fields.map((field, i) => (
+        <label key={i} className="block text-sm font-medium text-brand-blue">
+          {field.label}
+          {field.type === "textarea" ? (
+            <textarea
+              required={field.required}
+              className="input mt-1"
+              rows={4}
+              onChange={(e) =>
+                setAnswers({ ...answers, [field.label]: e.target.value })
+              }
+            />
+          ) : (
+            <input
+              required={field.required}
+              type={field.type}
+              className="input mt-1"
+              onChange={(e) =>
+                setAnswers({ ...answers, [field.label]: e.target.value })
+              }
+            />
+          )}
+        </label>
+      ))}
+      {error && <p className="text-sm text-brand-saffron">{error}</p>}
+      <button className="btn-primary">Submit form</button>
+    </form>
+  );
+}

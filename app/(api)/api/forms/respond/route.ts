@@ -10,7 +10,12 @@ export async function POST(request: Request) {
   const supabase = createAdminClient();
   const { data: assignment } = await supabase.from("form_assignments").select("id").eq("id", body.assignmentId).eq("recipient_user_id", user.id).maybeSingle();
   if (!assignment) return NextResponse.json({ error: "Form assignment not found." }, { status: 404 });
-  const { error } = await supabase.from("form_responses").upsert({ assignment_id: assignment.id, respondent_id: user.id, answers: body.answers, submitted_at: new Date().toISOString() }, { onConflict: "assignment_id" });
-  if (error) return NextResponse.json({ error: "Could not submit form." }, { status: 500 });
-  return NextResponse.json({ success: true });
+  const { data: resp, error: respError } = await supabase
+    .from("form_responses")
+    .upsert({ assignment_id: assignment.id, respondent_id: user.id, answers: body.answers, submitted_at: new Date().toISOString() }, { onConflict: "assignment_id" })
+    .select("id, submitted_at")
+    .maybeSingle();
+
+  if (respError) return NextResponse.json({ error: "Could not submit form." }, { status: 500 });
+  return NextResponse.json({ success: true, id: resp?.id, submitted_at: resp?.submitted_at }, { status: 201 });
 }

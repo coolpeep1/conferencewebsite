@@ -46,7 +46,7 @@ export default function RegistrationUpdateForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <label className="block">
-        <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-brand-blue/70">
           Status
         </span>
         <select
@@ -64,7 +64,7 @@ export default function RegistrationUpdateForm({
       </label>
 
       <label className="block">
-        <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-brand-blue/70">
           Update for attendee
         </span>
         <textarea
@@ -81,11 +81,11 @@ export default function RegistrationUpdateForm({
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+          className="btn-primary"
         >
           {saving ? "Saving..." : "Save Update"}
         </button>
-        {message && <p className="text-sm text-slate-600">{message}</p>}
+        {message && <p className="text-sm text-brand-blue/70">{message}</p>}
       </div>
     </form>
   );
