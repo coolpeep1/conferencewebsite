@@ -3,6 +3,7 @@
 import { Suspense, useMemo, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 type Role = "attendee" | "admin";
 type Mode = "sign-in" | "sign-up";
@@ -213,6 +214,14 @@ function LoginForm() {
               ? "Already have an account? Sign in"
               : "Need an attendee account? Create one"}
           </button>
+          {process.env.NODE_ENV !== "production" && (
+            <Link
+              href="/dev-login"
+              className="mt-3 block text-center text-sm font-medium text-brand-blue/70 hover:text-brand-blue"
+            >
+              Development admin login
+            </Link>
+          )}
         </div>
       </div>
     </main>

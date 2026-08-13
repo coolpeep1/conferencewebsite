@@ -59,6 +59,18 @@ create table organizations (
   updated_at timestamptz not null default now()
 );
 
+create table admin_notifications (
+  id uuid primary key default gen_random_uuid(),
+  admin_user_id uuid not null references app_users(id) on delete cascade,
+  form_id uuid,
+  form_response_id uuid,
+  title text not null check (length(trim(title)) > 0),
+  message text not null default '',
+  link text not null default '',
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
 create or replace function set_updated_at()
 returns trigger as $$
 begin
@@ -75,3 +87,4 @@ create trigger organizations_set_updated_at
 -- Keep RLS on with no policies so anon/public clients cannot read or write.
 alter table app_users enable row level security;
 alter table organizations enable row level security;
+alter table admin_notifications enable row level security;

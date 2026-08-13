@@ -22,7 +22,7 @@ export default async function AdminFormsPage() {
           <span className="accent" />
           <h1>My Forms</h1>
           <p className="mt-2 text-sm text-brand-blue/70">
-            Create and send custom forms to organizations.
+            Create and send custom forms to attendees.
           </p>
         </div>
         <Link href="/admin/forms/new" className="btn-primary">
@@ -33,38 +33,45 @@ export default async function AdminFormsPage() {
       <div className="mt-8 grid gap-4">
         {forms?.map((form: any) => {
           const assignments = form.form_assignments ?? [];
-          const responseCount = assignments.reduce(
-            (acc: number, a: any) => {
-              const fr = a.form_responses;
-              const hasResponse = Array.isArray(fr) ? fr.length > 0 : !!fr;
-              return acc + (hasResponse ? 1 : 0);
-            },
-            0
-          );
+          const responseCount = assignments.reduce((acc: number, a: any) => {
+            const fr = a.form_responses;
+            const hasResponse = Array.isArray(fr) ? fr.length > 0 : !!fr;
+            return acc + (hasResponse ? 1 : 0);
+          }, 0);
+
           return (
             <article
               key={form.id}
               className="rounded-lg border border-brand-cement bg-brand-white p-5"
             >
               <div className="flex items-start justify-between gap-4">
-                <h2 className="font-display text-lg font-bold text-brand-blue">
-                  {form.title}
-                </h2>
+                <div>
+                  <Link
+                    href={`/admin/forms/${form.id}`}
+                    className="font-display text-lg font-bold text-brand-blue hover:text-brand-saffron"
+                  >
+                    {form.title}
+                  </Link>
+                  <p className="mt-1 text-sm text-brand-blue/70">
+                    {form.description || "No instructions"}
+                  </p>
+                </div>
                 <DeleteFormButton
                   formId={form.id}
                   formTitle={form.title}
                   responseCount={responseCount}
                 />
               </div>
-              <p className="mt-1 text-sm text-brand-blue/70">
-                {form.description || "No instructions"}
-              </p>
-              <p className="mt-3 text-xs text-brand-blue/60">
-                Sent to {assignments.length} attendee
-                {assignments.length === 1 ? "" : "s"} · {responseCount}{" "}
-                response{responseCount === 1 ? "" : "s"} ·{" "}
-                {new Date(form.created_at).toLocaleDateString()}
-              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-brand-blue/60">
+                <span>
+                  Sent to {assignments.length} attendee
+                  {assignments.length === 1 ? "" : "s"}
+                </span>
+                <span>
+                  {responseCount} response{responseCount === 1 ? "" : "s"}
+                </span>
+                <span>{new Date(form.created_at).toLocaleDateString()}</span>
+              </div>
             </article>
           );
         })}

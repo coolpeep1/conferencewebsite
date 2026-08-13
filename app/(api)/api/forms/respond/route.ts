@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { enqueueEmail } from "@/lib/email/enqueue";
 
 export async function POST(request: Request) {
   const user = await getSessionUser();
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
   // Confirm the assignment exists and belongs to this attendee.
   const { data: assignment } = await supabase
     .from("form_assignments")
-    .select("id")
+    .select("id, custom_forms(id, title, created_by)")
     .eq("id", body.assignmentId)
     .eq("recipient_user_id", user.id)
     .maybeSingle();
@@ -64,6 +65,52 @@ export async function POST(request: Request) {
       { error: `Could not save form: ${insertError?.message ?? "insert returned no row"}` },
       { status: 500 }
     );
+  }
+
+  const form = Array.isArray(assignment.custom_forms)
+    ? assignment.custom_forms[0]
+    : assignment.custom_forms;
+
+  if (form?.created_by) {
+    await supabase.from("admin_notifications").insert({
+      admin_user_id: form.created_by,
+      form_id: form.id,
+      form_response_id: resp.id,
+      title: "New form submission",
+      message: `${user.full_name} submitted ${form.title}.`,
+      link: `/admin/forms/${form.id}`,
+    });
+
+    // Email the form's owning admin so they don't have to poll the bell icon.
+    // The worker coalesces this with other events the admin may receive in
+    // the same window.
+    const { data: admin } = await supabase
+      .from("app_users")
+      .select("id, email, full_name, role")
+      .eq("id", form.created_by)
+      .maybeSingle();
+
+    if (admin) {
+      await enqueueEmail({
+        recipient: {
+          id: admin.id,
+          email: admin.email,
+          full_name: admin.full_name,
+          role: admin.role,
+        },
+        trigger: "form_response_submitted",
+        subject: `New submission: ${form.title}`,
+        related_link: `/admin/forms/${form.id}`,
+        meta: {
+          formId: form.id,
+          formTitle: form.title,
+          formResponseId: resp.id,
+          respondentName: user.full_name,
+          adminName: admin.full_name,
+          responsesLink: `/admin/responses?form=${form.id}`,
+        },
+      });
+    }
   }
 
   // Bust caches so the admin Table View, the form detail page, and the

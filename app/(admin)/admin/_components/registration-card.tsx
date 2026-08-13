@@ -43,9 +43,7 @@ export default function RegistrationCard({ registration }: { registration: any }
               <dl className="grid gap-4 text-sm sm:grid-cols-2">
                 <Detail label="Contact" value={registration.contact_name} />
                 <Detail label="Email" value={registration.contact_email} />
-                <Detail label="Phone" value={registration.contact_phone || "Not provided"} />
                 <Detail label="Attendees" value={String(registration.num_attendees)} />
-                <Detail label="Dietary Notes" value={registration.dietary_notes || "None"} />
                 <Detail label="Form ID" value={registration.id} />
               </dl>
             </div>

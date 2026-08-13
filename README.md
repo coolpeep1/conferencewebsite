@@ -37,14 +37,22 @@ Open http://localhost:3000.
 2. Go to Settings > API and copy:
    - Project URL -> `NEXT_PUBLIC_SUPABASE_URL`
    - anon public key -> `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. Run `supabase/schema.sql` in the Supabase SQL editor.
-4. Create an admin user in Authentication > Users.
-5. Add that user to `admin_users`:
+3. Set `DATABASE_URL` in `.env.local`.
+4. Run:
 
-```sql
-insert into admin_users (id, email, full_name)
-values ('<user UUID>', '<email>', '<name>');
+```bash
+npm run db:setup
 ```
+
+This applies the SQL migrations in `supabase/migrations`.
+
+To create an admin account, run:
+
+```bash
+npm run admin:create -- --email=admin@example.com --password=secret123 --name="Admin Name"
+```
+
+For local development, you can also open `/dev-login` and create or sign in as an admin without touching the shell.
 
 ## Scripts
 
@@ -67,7 +75,7 @@ cp .env.example .env.local
 nano .env.local
 ```
 
-Fill in your real Supabase URL and anon key.
+Fill in your real Supabase URL, anon key, and database URL. If you want the bootstrap script to seed an admin account on the server, also set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_FULL_NAME`.
 
 ### 2. Install, Build, And Start
 

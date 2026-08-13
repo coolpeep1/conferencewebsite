@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPassword } from "@/lib/password";
 import { createSessionToken, applySessionCookie, type SessionUser } from "@/lib/session";
+import { enqueueEmail } from "@/lib/email/enqueue";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -68,6 +69,25 @@ export async function POST(request: Request) {
     console.error("Organization signup error:", organizationError.message);
     return NextResponse.json({ error: "Could not create the organization." }, { status: 500 });
   }
+
+  // Send a confirmation email to the new attendee. The worker handles
+  // coalescing with other events they may receive in the same window.
+  await enqueueEmail({
+    recipient: {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      role: user.role,
+    },
+    trigger: "registration_submitted",
+    subject: `Registration received: ${organizationName}`,
+    related_link: "/attendee",
+    meta: {
+      organizationId: null, // not available without an extra round-trip; OK
+      orgName: organizationName,
+      fullName,
+    },
+  });
 
   const sessionUser: SessionUser = {
     id: user.id,

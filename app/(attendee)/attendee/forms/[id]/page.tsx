@@ -29,9 +29,7 @@ export default async function AttendeeFormDetailPage({
     );
   }
 
-  if (!form) {
-    notFound();
-  }
+  if (!form) notFound();
 
   return (
     <section className="max-w-3xl">
@@ -39,7 +37,7 @@ export default async function AttendeeFormDetailPage({
         href="/attendee/forms"
         className="text-sm font-medium text-brand-blue/70 hover:text-brand-blue"
       >
-        ← Back to submitted forms
+        {"<-"} Back to submitted forms
       </Link>
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -60,13 +58,8 @@ export default async function AttendeeFormDetailPage({
         <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
           <Detail label="Contact" value={form.contact_name} />
           <Detail label="Email" value={form.contact_email} />
-          <Detail label="Phone" value={form.contact_phone || "Not provided"} />
           <Detail label="Attendees" value={String(form.num_attendees)} />
-          <Detail label="Dietary Notes" value={form.dietary_notes || "None"} />
-          <Detail
-            label="Last updated"
-            value={new Date(form.updated_at).toLocaleString()}
-          />
+          <Detail label="Last updated" value={new Date(form.updated_at).toLocaleString()} />
         </dl>
       </div>
 

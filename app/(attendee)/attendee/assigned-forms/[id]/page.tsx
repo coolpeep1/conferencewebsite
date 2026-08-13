@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRequiredAttendee } from "@/lib/auth";
 import ResponseForm from "./response-form";
@@ -20,8 +21,6 @@ export default async function AssignedFormPage({
 
   if (!assignment) notFound();
   const form = assignment.custom_forms;
-  // PostgREST returns a one-to-one join (UNIQUE constraint) as an object,
-  // not an array. Handle both shapes.
   const fr = assignment.form_responses;
   const submittedAt = Array.isArray(fr)
     ? fr[0]?.submitted_at ?? null
@@ -41,11 +40,21 @@ export default async function AssignedFormPage({
 
   return (
     <section className="max-w-2xl">
-      <div className="page-header">
-        <span className="accent" />
-        <h1>{form.title}</h1>
-        <p className="mt-2 text-sm text-brand-blue/70">{form.description}</p>
+      <Link
+        href="/attendee/assigned-forms"
+        className="text-sm font-medium text-brand-blue/70 hover:text-brand-blue"
+      >
+        {"<-"} Back to assigned forms
+      </Link>
+
+      <div className="mt-4">
+        <div className="page-header">
+          <span className="accent" />
+          <h1>{form.title}</h1>
+          <p className="mt-2 text-sm text-brand-blue/70">{form.description}</p>
+        </div>
       </div>
+
       <aside className="mt-5 rounded border border-brand-cement bg-brand-cement p-4">
         <p className="font-semibold text-brand-blue">
           Sent by {author?.full_name ?? "Conference administrator"}
@@ -60,6 +69,7 @@ export default async function AssignedFormPage({
           {profile?.contact_email || author?.email}
         </p>
       </aside>
+
       <ResponseForm
         assignmentId={assignment.id}
         fields={form.fields}
