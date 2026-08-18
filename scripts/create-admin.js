@@ -1,7 +1,8 @@
 const fs = require("fs");
 const path = require("path");
-const { Client } = require("pg");
+const { createClient } = require("@supabase/supabase-js");
 const bcrypt = require("bcryptjs");
+const readline = require("readline");
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) return;
@@ -31,48 +32,97 @@ function readArg(name) {
   return match ? match.slice(prefix.length) : "";
 }
 
+function question(query) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  return new Promise((resolve) => {
+    rl.question(query, (answer) => {
+      rl.close();
+      resolve(answer);
+    });
+  });
+}
+
 async function main() {
   loadEnvFile(path.join(process.cwd(), ".env.local"));
 
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is required.");
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.");
   }
 
-  const email = (readArg("email") || process.env.ADMIN_EMAIL || "").trim().toLowerCase();
-  const password = readArg("password") || process.env.ADMIN_PASSWORD || "";
-  const fullName = (readArg("name") || process.env.ADMIN_FULL_NAME || "Admin").trim();
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  let email = readArg("email") || process.env.ADMIN_EMAIL || "";
+  let password = readArg("password") || process.env.ADMIN_PASSWORD || "";
+  let fullName = readArg("name") || process.env.ADMIN_FULL_NAME || "";
+
+  // Interactive mode if credentials not provided
+  if (!email || !password) {
+    console.log("Admin Account Creation");
+    console.log("========================\n");
+    
+    if (!email) {
+      email = await question("Admin email: ");
+      email = email.trim().toLowerCase();
+    }
+    
+    if (!password) {
+      password = await question("Admin password (min 6 characters): ");
+    }
+    
+    if (!fullName) {
+      fullName = await question("Admin full name: ");
+      fullName = fullName.trim();
+    }
+  }
 
   if (!email || !password) {
-    throw new Error("Pass --email and --password.");
+    throw new Error("Email and password are required.");
   }
 
-  const client = new Client({
-    connectionString,
-    ssl: { rejectUnauthorized: false },
-  });
-
-  await client.connect();
-  try {
-    const passwordHash = await bcrypt.hash(password, 10);
-    const result = await client.query(
-      `insert into app_users (email, password_hash, full_name, role)
-       values ($1, $2, $3, 'admin')
-       on conflict (email)
-       do update set password_hash = excluded.password_hash,
-                     full_name = excluded.full_name,
-                     role = 'admin'
-       returning id`,
-      [email, passwordHash, fullName]
-    );
-
-    console.log(`Admin ready: ${email} (${result.rows[0].id})`);
-  } finally {
-    await client.end();
+  if (password.length < 6) {
+    throw new Error("Password must be at least 6 characters.");
   }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new Error("Please provide a valid email address.");
+  }
+
+  console.log("\nCreating admin account...");
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  
+  const { data, error } = await supabase
+    .from("app_users")
+    .upsert({
+      email,
+      password_hash: passwordHash,
+      full_name: fullName || "Admin",
+      role: "admin",
+    }, {
+      onConflict: "email"
+    })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create admin: ${error.message}`);
+  }
+
+  console.log(`✓ Admin account created successfully!`);
+  console.log(`  Email: ${email}`);
+  console.log(`  Name: ${data.full_name}`);
+  console.log(`  ID: ${data.id}`);
+  console.log(`\nYou can now login at /admin/login`);
 }
 
 main().catch((error) => {
-  console.error(error.message || error);
+  console.error("Error:", error.message || error);
   process.exit(1);
 });

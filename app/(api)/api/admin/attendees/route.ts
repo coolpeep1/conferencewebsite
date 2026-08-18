@@ -59,15 +59,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not create attendee." }, { status: 500 });
   }
 
-  const { error: organizationError } = await supabase.from("organizations").insert({
-    created_by: attendee.id,
-    org_name: organizationName || fullName,
-    contact_name: fullName,
-    contact_email: email,
+  // Use the same merge-or-create helper as the other signup paths so an
+  // admin who creates an attendee with an already-existing org name doesn't
+  // produce a duplicate organizations row.
+  const { error: organizationError } = await supabase.rpc("signup_or_merge_org", {
+    p_user_id: attendee.id,
+    p_org_name: organizationName || fullName,
+    p_contact_name: fullName,
+    p_contact_email: email,
+    p_num_attendees: 1,
   });
 
   if (organizationError) {
     await supabase.from("app_users").delete().eq("id", attendee.id);
+    console.error("Organization signup error:", organizationError.message);
     return NextResponse.json({ error: "Could not create attendee organization record." }, { status: 500 });
   }
 

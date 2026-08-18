@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { enqueueEmail } from "@/lib/email/enqueue";
+import { notifyEmail } from "@/lib/email/notify";
 
 const VALID_STATUSES = ["pending", "confirmed", "waitlisted", "declined"];
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   // we have a contact email to send to. The enqueue never throws into the
   // request — it logs and returns an empty id on failure.
   if (existing && existing.contact_email && existing.status !== body.status) {
-    await enqueueEmail({
+    await notifyEmail({
       recipient: {
         id: existing.created_by,
         email: existing.contact_email,

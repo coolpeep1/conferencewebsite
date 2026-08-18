@@ -25,5 +25,17 @@ module.exports = {
       autorestart: true,
       max_memory_restart: "300M",
     },
+    {
+      name: "conference-app-purge",
+      cwd: __dirname,
+      script: "node",
+      args: "scripts/purge-soft-deleted-orgs.js",
+      env: {
+        NODE_ENV: "production",
+      },
+      instances: 1,
+      autorestart: true,
+      max_memory_restart: "300M",
+    },
   ],
 };

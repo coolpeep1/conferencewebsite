@@ -16,9 +16,9 @@ create table if not exists email_jobs (
     'form_response_submitted',
     'registration_submitted'
   )),
-  -- 1 = highest priority (always wins in a coalesce). Lower number = more
+  -- 0 = highest priority (always wins in a coalesce). Lower number = more
   -- important. See lib/email/enqueue.ts for the priority map.
-  priority smallint not null check (priority between 1 and 4),
+  priority smallint not null check (priority between 0 and 4),
   -- Pre-rendered subject; the worker uses trigger_type + meta to render the
   -- body so absorbed triggers can be folded into a single email.
   subject text not null,

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import RegistrationUpdateForm from "./registration-update-form";
+import DeleteOrganizationButton from "./delete-organization-button";
 
 export default function RegistrationCard({ registration }: { registration: any }) {
   const [expanded, setExpanded] = useState(false);
@@ -46,6 +47,12 @@ export default function RegistrationCard({ registration }: { registration: any }
                 <Detail label="Attendees" value={String(registration.num_attendees)} />
                 <Detail label="Form ID" value={registration.id} />
               </dl>
+              <div className="mt-6">
+                <DeleteOrganizationButton
+                  orgId={registration.id}
+                  orgName={registration.org_name}
+                />
+              </div>
             </div>
 
             <div className="rounded-md border border-brand-cement bg-brand-white p-4">

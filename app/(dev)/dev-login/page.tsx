@@ -46,7 +46,21 @@ export default function DevLoginPage() {
   }
 
   if (isProduction) {
-    return null;
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-brand-white px-5 py-10">
+        <div className="w-full max-w-md rounded-lg border border-brand-cement bg-white p-6 text-center">
+          <h1 className="font-display text-2xl font-bold text-brand-blue">
+            Development Mode Only
+          </h1>
+          <p className="mt-4 text-brand-blue/70">
+            This page is only available in development mode. In production, use the command-line tool:
+          </p>
+          <code className="mt-4 block bg-brand-cement p-3 text-sm">
+            npm run admin:create
+          </code>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -89,7 +103,11 @@ export default function DevLoginPage() {
           />
         </label>
         {message && <p className="text-sm text-brand-saffron">{message}</p>}
-        <button disabled={saving} className="btn-primary w-full">
+        <button
+          type="submit"
+          disabled={saving}
+          className="btn-primary w-full rounded-md border border-[#f58700] bg-[#f58700] px-4 py-3 text-sm font-bold text-brand-white transition-colors hover:bg-[#d97500] disabled:opacity-50"
+        >
           {saving ? "Working..." : "Create admin and sign in"}
         </button>
       </form>

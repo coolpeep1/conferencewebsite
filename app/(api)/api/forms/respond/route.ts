@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { enqueueEmail } from "@/lib/email/enqueue";
+import { notifyEmail } from "@/lib/email/notify";
 
 export async function POST(request: Request) {
   const user = await getSessionUser();
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (admin) {
-      await enqueueEmail({
+      await notifyEmail({
         recipient: {
           id: admin.id,
           email: admin.email,

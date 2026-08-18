@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashPassword } from "@/lib/password";
 import { createSessionToken, applySessionCookie, type SessionUser } from "@/lib/session";
-import { enqueueEmail } from "@/lib/email/enqueue";
+import { notifyEmail } from "@/lib/email/notify";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -57,22 +57,54 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not create account." }, { status: 500 });
   }
 
-  const { error: organizationError } = await supabase.from("organizations").insert({
-    created_by: user.id,
-    org_name: organizationName,
-    contact_name: fullName,
-    contact_email: email,
-  });
+  // Merge into an existing org if a row with the same case-insensitive
+  // trimmed name already exists, otherwise create a new one. Wrapped with a
+  // 23505 retry because two concurrent signups for the same org name can
+  // both decide "no existing row" — the unique index on
+  // organizations.org_name_normalized makes the loser fail with 23505, and
+  // a retry takes the merge path.
+  let organizationId: string | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { data: orgId, error: orgError } = await supabase.rpc(
+      "signup_or_merge_org",
+      {
+        p_user_id: user.id,
+        p_org_name: organizationName,
+        p_contact_name: fullName,
+        p_contact_email: email,
+        p_num_attendees: 1,
+      }
+    );
 
-  if (organizationError) {
+    if (orgError) {
+      // 23505 = unique violation. On the first attempt, retry — the
+      // concurrent signup that beat us will have left an org row that the
+      // RPC's SELECT will now find. On the second attempt, give up.
+      if (orgError.code === "23505" && attempt === 0) continue;
+
+      await supabase.from("app_users").delete().eq("id", user.id);
+      console.error("Organization signup error:", orgError.message);
+      return NextResponse.json(
+        { error: "Could not create the organization." },
+        { status: 500 }
+      );
+    }
+
+    organizationId = (orgId as string | null) ?? null;
+    break;
+  }
+
+  if (!organizationId) {
     await supabase.from("app_users").delete().eq("id", user.id);
-    console.error("Organization signup error:", organizationError.message);
-    return NextResponse.json({ error: "Could not create the organization." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Could not create the organization." },
+      { status: 500 }
+    );
   }
 
   // Send a confirmation email to the new attendee. The worker handles
   // coalescing with other events they may receive in the same window.
-  await enqueueEmail({
+  await notifyEmail({
     recipient: {
       id: user.id,
       email: user.email,
@@ -83,7 +115,7 @@ export async function POST(request: Request) {
     subject: `Registration received: ${organizationName}`,
     related_link: "/attendee",
     meta: {
-      organizationId: null, // not available without an extra round-trip; OK
+      organizationId,
       orgName: organizationName,
       fullName,
     },

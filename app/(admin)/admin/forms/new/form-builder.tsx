@@ -2,34 +2,43 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { Field, FieldType, FormStatus } from "../field-types";
 
-type Attendee = { id: string; full_name: string; email: string };
-type Organization = {
-  id: string;
-  org_name: string;
-  contact_name: string;
-  created_by: string | null;
-};
-type Field = {
-  label: string;
-  type: "text" | "textarea" | "email" | "number";
-  required: boolean;
-};
+const NEEDS_OPTIONS: FieldType[] = ["select", "radio", "checkbox"];
+
+function parseOptions(raw: string | undefined): string[] {
+  return (raw ?? "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+function optionsToText(options: string[] | undefined): string {
+  return (options ?? []).join("\n");
+}
 
 export default function FormBuilder({
-  attendees,
-  organizations,
+  initialForm,
 }: {
-  attendees: Attendee[];
-  organizations: Organization[];
+  initialForm?: {
+    id: string;
+    title: string;
+    description: string;
+    fields: Field[];
+    status: FormStatus;
+  };
 }) {
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [fields, setFields] = useState<Field[]>([
-    { label: "", type: "text", required: true },
-  ]);
-  const [selected, setSelected] = useState<string[]>([]);
+  const isEdit = Boolean(initialForm);
+
+  const [title, setTitle] = useState(initialForm?.title ?? "");
+  const [description, setDescription] = useState(initialForm?.description ?? "");
+  const [fields, setFields] = useState<Field[]>(
+    initialForm?.fields?.length
+      ? initialForm.fields
+      : [{ label: "", type: "text", required: true }]
+  );
+  const [status, setStatus] = useState<FormStatus>(initialForm?.status ?? "draft");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -45,25 +54,48 @@ export default function FormBuilder({
     e.preventDefault();
     setSaving(true);
     setError("");
-    const response = await fetch("/api/admin/forms", {
-      method: "POST",
+
+    const invalidOptionField = fields.find(
+      (f) => NEEDS_OPTIONS.includes(f.type) && (f.options?.length ?? 0) === 0
+    );
+    if (invalidOptionField) {
+      setError(
+        `"${invalidOptionField.label || "Question"}" needs at least one option.`
+      );
+      setSaving(false);
+      return;
+    }
+
+    const url = isEdit ? `/api/admin/forms/${initialForm!.id}` : "/api/admin/forms";
+    const method = isEdit ? "PUT" : "POST";
+
+    const response = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title,
         description,
         fields,
-        attendeeIds: selected,
+        status,
       }),
     });
+
     if (!response.ok) {
       setError(
         (await response.json().catch(() => ({}))).error ||
-          "Could not create form."
+          (isEdit ? "Could not save form." : "Could not create form.")
       );
       setSaving(false);
       return;
     }
-    router.push("/admin/forms");
+
+    const data = (await response.json().catch(() => ({}))) as { id: string };
+    const targetId = data.id ?? initialForm?.id;
+    if (targetId) {
+      router.push(`/admin/forms/${targetId}`);
+    } else {
+      router.push("/admin/forms");
+    }
     router.refresh();
   }
 
@@ -122,15 +154,26 @@ export default function FormBuilder({
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <select
                   value={field.type}
-                  onChange={(e) =>
-                    update(index, { type: e.target.value as Field["type"] })
-                  }
+                  onChange={(e) => {
+                    const newType = e.target.value as FieldType;
+                    const patch: Partial<Field> = { type: newType };
+                    if (NEEDS_OPTIONS.includes(newType) && !field.options) {
+                      patch.options = [];
+                    }
+                    if (!NEEDS_OPTIONS.includes(newType)) {
+                      patch.options = undefined;
+                    }
+                    update(index, patch);
+                  }}
                   className="rounded border border-brand-cement px-2 py-1 text-brand-blue"
                 >
                   <option value="text">Short text</option>
                   <option value="textarea">Long text</option>
                   <option value="email">Email</option>
                   <option value="number">Number</option>
+                  <option value="select">Dropdown (pick one)</option>
+                  <option value="radio">Radio buttons (pick one)</option>
+                  <option value="checkbox">Checkboxes (pick many)</option>
                 </select>
                 <label className="flex items-center gap-2 text-sm text-brand-blue">
                   <input
@@ -154,6 +197,20 @@ export default function FormBuilder({
                   </button>
                 )}
               </div>
+              {NEEDS_OPTIONS.includes(field.type) && (
+                <label className="mt-2 block text-xs text-brand-blue/70">
+                  Options (one per line)
+                  <textarea
+                    value={optionsToText(field.options)}
+                    onChange={(e) =>
+                      update(index, { options: parseOptions(e.target.value) })
+                    }
+                    className="input mt-1"
+                    rows={3}
+                    placeholder={"Yes\nNo\nMaybe"}
+                  />
+                </label>
+              )}
             </div>
           ))}
         </div>
@@ -161,92 +218,48 @@ export default function FormBuilder({
 
       <fieldset>
         <legend className="font-display text-lg font-bold text-brand-blue">
-          Send to attendees
+          Status
         </legend>
         <p className="mt-1 text-sm text-brand-blue/70">
-          Selected attendees see the form in their assigned forms list.
+          Drafts are admin-only and can be edited freely. Publishing makes the
+          form available for sending to attendees.
         </p>
-        <div className="mt-3 max-h-64 space-y-2 overflow-auto rounded border border-brand-cement p-3">
-          {attendees.map((attendee) => (
-            <label
-              key={attendee.id}
-              className="flex gap-2 text-sm text-brand-blue"
-            >
-              <input
-                type="checkbox"
-                checked={selected.includes(attendee.id)}
-                onChange={(e) =>
-                  setSelected(
-                    e.target.checked
-                      ? [...selected, attendee.id]
-                      : selected.filter((id) => id !== attendee.id)
-                  )
-                }
-              />
-              <span>
-                {attendee.full_name}{" "}
-                <span className="text-brand-blue/60">({attendee.email})</span>
-              </span>
-            </label>
-          ))}
-          {!attendees.length && (
-            <p className="text-sm text-brand-blue/60">
-              No attendees are available yet.
-            </p>
-          )}
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend className="font-display text-lg font-bold text-brand-blue">
-          Or organization recipients
-        </legend>
-        <p className="mt-1 text-sm text-brand-blue/70">
-          Selecting an organization sends the form to the attendee account that
-          submitted it.
-        </p>
-        <div className="mt-3 max-h-64 space-y-2 overflow-auto rounded border border-brand-cement p-3">
-          {organizations.map((org) => (
-            <label
-              key={org.id}
-              className={`flex gap-2 text-sm ${
-                !org.created_by ? "text-brand-blue/40" : "text-brand-blue"
-              }`}
-            >
-              <input
-                type="checkbox"
-                disabled={!org.created_by}
-                checked={!!org.created_by && selected.includes(org.created_by)}
-                onChange={(e) =>
-                  org.created_by &&
-                  setSelected(
-                    e.target.checked
-                      ? [...selected, org.created_by]
-                      : selected.filter((id) => id !== org.created_by)
-                  )
-                }
-              />
-              <span>
-                {org.org_name}{" "}
-                <span className="text-brand-blue/60">
-                  ({org.contact_name}
-                  {org.created_by ? "" : ", no linked attendee"})
-                </span>
-              </span>
-            </label>
-          ))}
-          {!organizations.length && (
-            <p className="text-sm text-brand-blue/60">
-              No organizations are available yet.
-            </p>
-          )}
+        <div className="mt-3 grid grid-cols-2 gap-1 rounded-md bg-brand-cement p-1 text-sm">
+          <button
+            type="button"
+            onClick={() => setStatus("draft")}
+            className={`rounded px-3 py-2 font-medium ${
+              status === "draft"
+                ? "bg-brand-white text-brand-blue border border-brand-cement"
+                : "text-brand-blue/70"
+            }`}
+          >
+            Draft
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatus("published")}
+            className={`rounded px-3 py-2 font-medium ${
+              status === "published"
+                ? "bg-brand-white text-brand-blue border border-brand-cement"
+                : "text-brand-blue/70"
+            }`}
+          >
+            Published
+          </button>
         </div>
       </fieldset>
 
       {error && <p className="text-sm text-brand-saffron">{error}</p>}
 
       <button disabled={saving} className="btn-primary">
-        {saving ? "Creating..." : "Create and send form"}
+        {saving
+          ? "Saving..."
+          : isEdit
+            ? "Save changes"
+            : status === "published"
+              ? "Save and publish"
+              : "Save draft"}
       </button>
     </form>
   );

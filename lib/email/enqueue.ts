@@ -7,10 +7,16 @@ export type EmailTrigger =
   | "registration_status_changed" // priority 1 — recipient care (confirmed/declined)
   | "form_assigned" // priority 2 — actionable for the recipient
   | "form_response_submitted" // priority 3 — info only
-  | "registration_submitted"; // priority 4 — info only
+  | "registration_submitted" // priority 4 — info only
+  | "password_reset" // priority 0 — urgent security action
+  | "org_deleted" // priority 1 — admin-driven state change
+  | "org_restored"; // priority 1 — admin-driven state change
 
 const PRIORITY: Record<EmailTrigger, number> = {
+  password_reset: 0,
   registration_status_changed: 1,
+  org_deleted: 1,
+  org_restored: 1,
   form_assigned: 2,
   form_response_submitted: 3,
   registration_submitted: 4,

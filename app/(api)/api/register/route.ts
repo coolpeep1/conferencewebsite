@@ -31,14 +31,19 @@ export async function POST(request: Request) {
   }
 
   const supabase = createAdminClient();
-  const { error } = await supabase.from("organizations").insert({
-    created_by: user.id,
-    org_name: String(org_name).trim(),
-    contact_name: String(contact_name).trim(),
-    contact_email: String(contact_email).trim().toLowerCase(),
-    contact_phone: contact_phone ? String(contact_phone).trim() : null,
-    num_attendees: attendeeCount,
-    dietary_notes: dietary_notes ? String(dietary_notes).trim() : null,
+  // Use the same merge-or-create helper as /api/auth/signup so identical
+  // names collapse to a single organizations row. `user.id` here is the
+  // admin making the registration; the RPC will set organization_id on
+  // the admin's own app_users row, which is a harmless no-op (admins
+  // never render with an org context).
+  const { error } = await supabase.rpc("signup_or_merge_org", {
+    p_user_id: user.id,
+    p_org_name: String(org_name).trim(),
+    p_contact_name: String(contact_name).trim(),
+    p_contact_email: String(contact_email).trim().toLowerCase(),
+    p_contact_phone: contact_phone ? String(contact_phone).trim() : null,
+    p_num_attendees: attendeeCount,
+    p_dietary_notes: dietary_notes ? String(dietary_notes).trim() : null,
   });
 
   if (error) {

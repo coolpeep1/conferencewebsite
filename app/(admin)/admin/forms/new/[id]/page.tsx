@@ -1,12 +1,6 @@
 import { notFound } from "next/navigation";
 import { getRequiredAdmin } from "@/lib/auth";
-
-type Field = {
-  label: string;
-  type: "text" | "textarea" | "email" | "number" | "select" | "radio" | "checkbox";
-  required: boolean;
-  options?: string[];
-};
+import type { Field } from "../../field-types";
 
 function formatAnswer(value: unknown): string {
   if (Array.isArray(value)) {
@@ -47,11 +41,13 @@ export default async function AdminFormResponsesPage({
     .eq("form_id", id)
     .order("assigned_at", { ascending: false });
 
-  const submittedCount =
-    assignments?.filter((a: any) => {
-      const fr = a.form_responses;
-      return Array.isArray(fr) ? fr.length > 0 : !!fr;
-    }).length ?? 0;
+  // All assignments — submitted and pending both surface in the view.
+  const visibleAssignments = assignments ?? [];
+  const submittedCount = visibleAssignments.filter((a: any) => {
+    const fr = a.form_responses;
+    const response = Array.isArray(fr) ? fr[0] : fr;
+    return response?.submitted_at;
+  }).length;
 
   return (
     <section className="max-w-4xl">
@@ -67,7 +63,7 @@ export default async function AdminFormResponsesPage({
       </p>
 
       <div className="mt-8 space-y-4">
-        {assignments?.map((assignment: any) => {
+        {visibleAssignments.map((assignment: any) => {
           const fr = assignment.form_responses;
           const response = Array.isArray(fr) ? fr[0] : fr;
           const recipient = assignment.app_users;
@@ -116,7 +112,7 @@ export default async function AdminFormResponsesPage({
           );
         })}
 
-        {!assignments?.length && (
+        {!visibleAssignments.length && (
           <p className="mt-8 text-sm text-brand-blue/70">
             This form hasn&apos;t been sent to anyone yet.
           </p>

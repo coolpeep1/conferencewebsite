@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { enqueueEmail } from "@/lib/email/enqueue";
+import { notifyEmail } from "@/lib/email/notify";
 
 export async function POST(
   request: Request,
@@ -18,9 +18,12 @@ export async function POST(
   const attendeeIds = Array.isArray(body?.attendeeIds)
     ? body.attendeeIds.filter((value: unknown) => typeof value === "string")
     : [];
+  const organizationIds = Array.isArray(body?.organizationIds)
+    ? body.organizationIds.filter((value: unknown) => typeof value === "string")
+    : [];
 
-  if (!formId || !attendeeIds.length) {
-    return NextResponse.json({ error: "Select at least one attendee." }, { status: 400 });
+  if (!formId || (attendeeIds.length === 0 && organizationIds.length === 0)) {
+    return NextResponse.json({ error: "Select at least one attendee or organization." }, { status: 400 });
   }
 
   const supabase = createAdminClient();
@@ -35,43 +38,73 @@ export async function POST(
     return NextResponse.json({ error: "Form not found." }, { status: 404 });
   }
 
+  // Expand any attendeeIds into the orgs they belong to. This makes the
+  // legacy per-attendee UI work with the per-org assignment model, and
+  // also handles the "send to all attendees of these orgs" case in one
+  // step. Attendees without an organization_id are dropped here.
+  const expandedOrgIds = new Set<string>(organizationIds);
+  if (attendeeIds.length > 0) {
+    const { data: attendeeOrgs } = await supabase
+      .from("app_users")
+      .select("id, organization_id")
+      .in("id", attendeeIds)
+      .eq("role", "attendee");
+    for (const row of attendeeOrgs ?? []) {
+      if (row.organization_id) {
+        expandedOrgIds.add(row.organization_id);
+      }
+    }
+  }
+
+  if (expandedOrgIds.size === 0) {
+    return NextResponse.json(
+      { error: "Selected attendees are not linked to any organization." },
+      { status: 400 }
+    );
+  }
+
+  // Dedupe against existing assignments keyed on (form_id, organization_id).
   const { data: existingAssignments } = await supabase
     .from("form_assignments")
-    .select("recipient_user_id")
+    .select("organization_id")
     .eq("form_id", formId)
-    .in("recipient_user_id", attendeeIds);
+    .in("organization_id", Array.from(expandedOrgIds));
 
-  const existingIds = new Set((existingAssignments ?? []).map((row) => row.recipient_user_id));
-  const inserts = attendeeIds
-    .filter((attendeeId: string) => !existingIds.has(attendeeId))
-    .map((recipient_user_id: string) => ({ form_id: formId, recipient_user_id }));
+  const existingOrgIds = new Set(
+    (existingAssignments ?? []).map((row) => row.organization_id).filter(Boolean) as string[]
+  );
+  const orgsToInsert = Array.from(expandedOrgIds).filter((id) => !existingOrgIds.has(id));
 
-  if (inserts.length) {
+  if (orgsToInsert.length) {
+    const inserts = orgsToInsert.map((organization_id) => ({
+      form_id: formId,
+      organization_id,
+    }));
+
     const { data: createdAssignments, error } = await supabase
       .from("form_assignments")
       .insert(inserts)
-      .select("id, recipient_user_id");
+      .select("id, organization_id");
 
     if (error || !createdAssignments) {
-      return NextResponse.json({ error: error?.message || "Could not create assignments." }, { status: 500 });
+      return NextResponse.json(
+        { error: error?.message || "Could not create assignments." },
+        { status: 500 }
+      );
     }
 
-    // Look up attendee emails so we can enqueue one form_assigned email per
-    // newly-assigned recipient. Per the project spec, the admin doesn't get
-    // an email on assignment — only the attendee.
+    // Look up the attendees of each newly-assigned org so we can enqueue one
+    // form_assigned email per attendee. Per the project spec, the admin
+    // doesn't get an email on assignment — only the attendee.
     const { data: attendees } = await supabase
       .from("app_users")
-      .select("id, email, full_name, role")
-      .in("id", inserts.map((i: { recipient_user_id: string }) => i.recipient_user_id));
+      .select("id, email, full_name, role, organization_id")
+      .in("organization_id", orgsToInsert)
+      .eq("role", "attendee");
 
     if (attendees) {
       for (const attendee of attendees) {
-        const assignment = createdAssignments.find(
-          (row) => row.recipient_user_id === attendee.id
-        );
-        if (!assignment) continue;
-
-        await enqueueEmail({
+        await notifyEmail({
           recipient: {
             id: attendee.id,
             email: attendee.email,
@@ -80,12 +113,12 @@ export async function POST(
           },
           trigger: "form_assigned",
           subject: `New form to complete: ${form.title}`,
-          related_link: `/attendee/assigned-forms/${assignment.id}`,
+          related_link: `/attendee/assigned-forms`,
           meta: {
             formId,
             formTitle: form.title,
             fullName: attendee.full_name,
-            formLink: `/attendee/assigned-forms/${assignment.id}`,
+            formLink: `/attendee/assigned-forms`,
           },
         });
       }
@@ -98,7 +131,7 @@ export async function POST(
 
   return NextResponse.json({
     success: true,
-    sent: inserts.length,
-    alreadySent: attendeeIds.length - inserts.length,
+    sent: orgsToInsert.length,
+    alreadySent: existingOrgIds.size,
   });
 }

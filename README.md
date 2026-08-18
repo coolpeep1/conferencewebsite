@@ -54,6 +54,12 @@ npm run admin:create -- --email=admin@example.com --password=secret123 --name="A
 
 For local development, you can also open `/dev-login` and create or sign in as an admin without touching the shell.
 
+Email notifications send directly by default, so they do not depend on the background worker. If you want queue mode later, set `EMAIL_NOTIFICATION_MODE=queue`.
+
+### Trash + 5-day hard delete
+
+Each admin's Registration Center has a Trash tab (link in the sidebar). Org rows soft-deleted from the dashboard land here and stay for 5 days (`PURGE_RETENTION_DAYS`). The `conference-app-purge` PM2 process hard-deletes rows past that window. There's no perm-delete-now override.
+
 ## Scripts
 
 ```bash
@@ -61,7 +67,12 @@ npm run dev
 npm run build
 npm run start
 npm run lint
+npm run db:setup          # apply SQL migrations
+npm run admin:create      # create or update an admin user
+npm run purge             # run the trash-purge once (CLI)
 ```
+
+The background scripts (`scripts/email-worker.js`, `scripts/purge-soft-deleted-orgs.js`) are run under PM2 — see `ecosystem.config.js`.
 
 ## Server Deployment
 
@@ -119,4 +130,8 @@ git pull
 npm install
 npm run build
 pm2 restart conference-app
+pm2 restart conference-app-worker
+pm2 restart conference-app-purge
 ```
+
+Three PM2 processes run side-by-side: the Next.js server, the email worker, and the trash-purge worker. The trash-purge checks every `PURGE_TICK_MS` (default 1 hour) for orgs soft-deleted more than `PURGE_RETENTION_DAYS` (default 5) ago and hard-deletes them (FK cascade removes form assignments and responses). Use `npm run purge` to run a single tick manually.

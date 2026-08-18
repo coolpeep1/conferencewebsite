@@ -12,6 +12,7 @@ const adminNav = [
     ],
   },
   { href: "/admin/attendees/new", label: "Create Attendee" },
+  { href: "/admin/trash", label: "Trash" },
   { href: "/admin/profile", label: "My Profile" },
 ];
 

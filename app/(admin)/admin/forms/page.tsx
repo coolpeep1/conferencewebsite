@@ -42,13 +42,13 @@ export default async function AdminFormsPage() {
           return (
             <article
               key={form.id}
-              className="rounded-lg border border-brand-cement bg-brand-white p-5"
+              className="group rounded-lg border border-brand-cement bg-brand-white p-5 transition-all hover:border-brand-saffron hover:bg-brand-cement hover:shadow-sm"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <Link
                     href={`/admin/forms/${form.id}`}
-                    className="font-display text-lg font-bold text-brand-blue hover:text-brand-saffron"
+                    className="font-display text-lg font-bold text-brand-blue transition-colors group-hover:text-brand-saffron"
                   >
                     {form.title}
                   </Link>

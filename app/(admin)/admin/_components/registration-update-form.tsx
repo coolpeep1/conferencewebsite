@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const STATUSES = ["pending", "confirmed", "waitlisted", "declined"] as const;
+const STATUSES = ["pending", "confirmed", "waitlisted"] as const;
 
 export default function RegistrationUpdateForm({
   id,

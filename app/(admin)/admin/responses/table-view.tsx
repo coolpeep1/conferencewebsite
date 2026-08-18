@@ -6,13 +6,21 @@ import { AgGridReact } from "ag-grid-react";
 import {
   CsvExportModule,
   ModuleRegistry,
+  PaginationModule,
+  TextFilterModule,
+  ValidationModule,
   type ColDef,
   type ICellRendererParams,
   type ValueFormatterParams,
   type ValueGetterParams,
 } from "ag-grid-community";
 
-ModuleRegistry.registerModules([CsvExportModule]);
+ModuleRegistry.registerModules([
+  CsvExportModule,
+  PaginationModule,
+  TextFilterModule,
+  ValidationModule,
+]);
 
 export type FieldDef = {
   label: string;
@@ -77,10 +85,12 @@ export default function TableView({
   forms,
   selectedForm,
   rows,
+  showHeader = true,
 }: {
   forms: FormSummary[];
   selectedForm: FormSummary | null;
   rows: ResponseRow[];
+  showHeader?: boolean;
 }) {
   const columnDefs: ColDef<ResponseRow>[] = useMemo(() => {
     const cols: ColDef<ResponseRow>[] = [
@@ -184,15 +194,17 @@ export default function TableView({
 
   return (
     <section className="space-y-6">
-      <header>
-        <div className="h-1.5 w-12 rounded-full bg-brand-saffron" />
-        <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-brand-blue">
-          Table View
-        </h1>
-        <p className="mt-2 text-sm text-brand-blue/70">
-          Inspect every response across your forms in one sortable, filterable grid.
-        </p>
-      </header>
+      {showHeader && (
+        <header>
+          <div className="h-1.5 w-12 rounded-full bg-brand-saffron" />
+          <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-brand-blue">
+            Table View
+          </h1>
+          <p className="mt-2 text-sm text-brand-blue/70">
+            Inspect every response across your forms in one sortable, filterable grid.
+          </p>
+        </header>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         {/* Form picker */}
@@ -281,6 +293,7 @@ export default function TableView({
                   rowData={rows}
                   columnDefs={columnDefs}
                   defaultColDef={defaultColDef}
+                  theme="legacy"
                   pagination={true}
                   paginationPageSize={50}
                   paginationPageSizeSelector={[25, 50, 100, 200]}

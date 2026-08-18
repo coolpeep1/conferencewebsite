@@ -2,7 +2,10 @@ export type EmailTrigger =
   | "registration_status_changed"
   | "form_assigned"
   | "form_response_submitted"
-  | "registration_submitted";
+  | "registration_submitted"
+  | "password_reset"
+  | "org_deleted"
+  | "org_restored";
 
 type AbsorbedItem = { subject: string };
 
@@ -149,6 +152,45 @@ export function renderEmail(args: RenderEmailArgs): RenderedEmail {
       const bodyText = `Hi ${fullName},\n\nThanks for registering ${orgName} for the conference. We've received your registration and will email you once it's been reviewed.${alsoIncludesText(also)}`;
       const rendered = layout("Thanks for registering", `Registration received: ${orgName}`, bodyHtml, "/attendee", "Go to your portal");
       return { subject: `Registration received: ${orgName}`, html: rendered.html, text: bodyText };
+    }
+    case "password_reset": {
+      const fullName = typeof args.meta.fullName === "string" ? args.meta.fullName : "there";
+      const resetLink = absoluteUrl(typeof args.meta.resetLink === "string" ? args.meta.resetLink : "/auth/reset-password");
+      const bodyHtml = `
+        <p class="paragraph">Hi ${escapeHtml(fullName)},</p>
+        <p class="paragraph">We received a request to reset your password. Click the button below to reset it:</p>
+        <p><a href="${escapeHtml(resetLink)}" class="button">Reset password</a></p>
+        <p class="paragraph">This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+        ${alsoIncludesHtml(also)}
+      `;
+      const bodyText = `Hi ${fullName},\n\nWe received a request to reset your password. Click the link below to reset it:\n\n${resetLink}\n\nThis link will expire in 1 hour. If you didn't request this, you can safely ignore this email.${alsoIncludesText(also)}`;
+      const rendered = layout("Password Reset Request", "Password Reset Request", bodyHtml, resetLink, "Reset password");
+      return { subject: "Password Reset Request", html: rendered.html, text: bodyText };
+    }
+    case "org_deleted": {
+      const fullName = typeof args.meta.fullName === "string" ? args.meta.fullName : "there";
+      const orgName = typeof args.meta.orgName === "string" ? args.meta.orgName : "your organization";
+      const bodyHtml = `
+        <p class="paragraph">Hi ${escapeHtml(fullName)},</p>
+        <p class="paragraph">Your registration for <strong>${escapeHtml(orgName)}</strong> has been removed by the conference organizer. The organization's data will be permanently deleted from our records in 5 days.</p>
+        <p class="paragraph">If this was a mistake, please contact the organizer to restore it before then. After 5 days the data is gone for good.</p>
+        ${alsoIncludesHtml(also)}
+      `;
+      const bodyText = `Hi ${fullName},\n\nYour registration for ${orgName} has been removed by the conference organizer. The organization's data will be permanently deleted from our records in 5 days.\n\nIf this was a mistake, please contact the organizer to restore it before then. After 5 days the data is gone for good.${alsoIncludesText(also)}`;
+      const rendered = layout(`${orgName} was removed`, `${orgName} was removed from the conference`, bodyHtml, "/attendee", "View your portal");
+      return { subject: `Your organization was removed from the conference`, html: rendered.html, text: bodyText };
+    }
+    case "org_restored": {
+      const fullName = typeof args.meta.fullName === "string" ? args.meta.fullName : "there";
+      const orgName = typeof args.meta.orgName === "string" ? args.meta.orgName : "your organization";
+      const bodyHtml = `
+        <p class="paragraph">Hi ${escapeHtml(fullName)},</p>
+        <p class="paragraph">Good news — your registration for <strong>${escapeHtml(orgName)}</strong> has been restored by the conference organizer. Everything is back to normal.</p>
+        ${alsoIncludesHtml(also)}
+      `;
+      const bodyText = `Hi ${fullName},\n\nGood news — your registration for ${orgName} has been restored by the conference organizer. Everything is back to normal.${alsoIncludesText(also)}`;
+      const rendered = layout(`${orgName} was restored`, `${orgName} was restored to the conference`, bodyHtml, "/attendee", "View your portal");
+      return { subject: `Your organization was restored to the conference`, html: rendered.html, text: bodyText };
     }
     default:
       throw new Error(`Unknown email trigger: ${args.trigger}`);

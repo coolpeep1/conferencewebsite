@@ -201,19 +201,46 @@ function LoginForm() {
             </button>
           </form>
 
-          <button
-            type="button"
-            onClick={() => {
-              setRole("attendee");
-              setMode(mode === "sign-up" ? "sign-in" : "sign-up");
-              setMessage("");
-            }}
-            className="mt-4 w-full text-center text-sm font-medium text-brand-blue/70 hover:text-brand-blue"
-          >
-            {mode === "sign-up"
-              ? "Already have an account? Sign in"
-              : "Need an attendee account? Create one"}
-          </button>
+          {mode === "sign-in" && role === "attendee" && (
+            <div className="mt-5 rounded-lg border border-brand-saffron bg-brand-cement p-4">
+              <p className="text-sm font-semibold text-brand-blue">New attendee?</p>
+              <p className="mt-1 text-sm text-brand-blue/70">
+                Create an account to access your assigned and submitted forms.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("sign-up");
+                  setMessage("");
+                }}
+                className="mt-3 w-full rounded-md border border-brand-saffron bg-brand-saffron px-4 py-3 text-sm font-bold text-brand-white transition-colors hover:bg-[#d97500]"
+              >
+                Create attendee account
+              </button>
+            </div>
+          )}
+
+          {mode === "sign-up" && (
+            <button
+              type="button"
+              onClick={() => {
+                setMode("sign-in");
+                setMessage("");
+              }}
+              className="mt-4 w-full text-center text-sm font-medium text-brand-blue/70 hover:text-brand-blue"
+            >
+              Already have an account? Sign in
+            </button>
+          )}
+
+          {mode === "sign-in" && role === "attendee" && (
+            <Link
+              href="/forgot-password"
+              className="mt-4 block text-center text-sm font-medium text-brand-blue/70 hover:text-brand-blue"
+            >
+              Forgot password?
+            </Link>
+          )}
           {process.env.NODE_ENV !== "production" && (
             <Link
               href="/dev-login"
